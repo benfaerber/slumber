@@ -15,7 +15,7 @@ use slumber_core::{
 use rest_parser::{
     headers::Authorization as RestAuthorization,
     template::{Template as RestTemplate, TemplatePart as RestTemplatePart},
-    RestFlavor, RestFormat, RestRequest, RestVariables,
+    Body as RestBody, RestFlavor, RestFormat, RestRequest, RestVariables,
 };
 use winnow::Parser;
 
@@ -56,6 +56,33 @@ fn build_authentication(r_auth: RestAuthorization) -> Authentication {
     }
 }
 
+fn build_body(
+    r_body: RestBody,
+    s_headers: IndexMap<String, Template>,
+) -> RecipeBody {
+    // We only want the text for now
+    let body_text = match r_body {
+        RestBody::Text(text) => text,
+        RestBody::SaveToFile { text, .. } => text,
+        RestBody::LoadFromFile { .. } => RestTemplate::new(""),
+    };
+
+    let recipe_body = rest_template_to_template(body_text);
+    RecipeBody::Raw {
+        body: recipe_body,
+        content_type: None,
+    }
+}
+
+fn build_query(
+    r_query: IndexMap<String, RestTemplate>,
+) -> Vec<(String, Template)> {
+    r_query
+        .into_iter()
+        .map(|(k, v)| (k, rest_template_to_template(v)))
+        .collect()
+}
+
 fn attempt_receipe(
     request: RestRequest,
     index: usize,
@@ -76,6 +103,7 @@ fn attempt_receipe(
     let s_url = rest_template_to_template(r_url);
     let s_headers = build_header_map(r_headers);
     let s_auth = r_authorization.map(build_authentication);
+    let s_query = build_query(r_query);
 
     Recipe {
         id: s_id.into(),
@@ -85,7 +113,7 @@ fn attempt_receipe(
         authentication: s_auth,
         body: None,
         headers: s_headers,
-        query: vec![],
+        query: s_query, 
     };
     todo!()
 }
