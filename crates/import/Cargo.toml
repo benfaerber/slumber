@@ -17,6 +17,7 @@ itertools = {workspace = true}
 mime = {workspace = true}
 openapiv3 = "2.0.0"
 reqwest = {workspace = true}
+rest_parser = "0.1.2"
 serde = {workspace = true}
 serde_json = {workspace = true}
 serde_yaml = {workspace = true}
