@@ -27,6 +27,10 @@ enum Format {
     /// OpenAPI v3.0 (JSON or YAML) v3.1 not supported but may work
     /// https://spec.openapis.org/oas/v3.0.3
     Openapi,
+    /// A VSCode `.rest` file or a Jetbrains `.http` file
+    /// https://github.com/Huachao/vscode-restclient
+    /// https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
+    Rest,
 }
 
 impl Subcommand for ImportCommand {
@@ -37,6 +41,7 @@ impl Subcommand for ImportCommand {
                 slumber_import::from_insomnia(&self.input_file)?
             }
             Format::Openapi => slumber_import::from_openapi(&self.input_file)?,
+            Format::Rest => slumber_import::from_rest(&self.input_file)?,
         };
 
         // Write the output

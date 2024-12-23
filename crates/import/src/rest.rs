@@ -1,6 +1,6 @@
 //! Import request collections from VSCode `.rest` files or Jetbrains `.http` files.
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use indexmap::IndexMap;
 use serde::de::IgnoredAny;
 use slumber_core::{
@@ -11,7 +11,7 @@ use slumber_core::{
         SelectorMode,
     },
     http::content_type::ContentType,
-    template::{Identifier, Template},
+    template::{Identifier, Template}, util::NEW_ISSUE_LINK,
 };
 
 use rest_parser::{
@@ -19,6 +19,9 @@ use rest_parser::{
     template::{Template as RestTemplate, TemplatePart as RestTemplatePart},
     Body as RestBody, RestFlavor, RestFormat, RestRequest, RestVariables,
 };
+use tracing::{info, warn};
+use std::{fs::File, io::Read, str::FromStr};
+use std::path::Path;
 
 /// Case insensitive header to use to guess the content type
 const HEADER_CONTENT_TYPE: &'static str = "content-type";
@@ -238,7 +241,7 @@ fn build_profile_map(flavor: RestFlavor, variables: RestVariables) -> IndexMap<P
 } 
 
 
-fn attempt_collection(rest_format: RestFormat) -> anyhow::Result<Collection> {
+fn attempt_collection_from_rest(rest_format: RestFormat) -> anyhow::Result<Collection> {
     let RestFormat {
         requests,
         variables,
@@ -265,5 +268,24 @@ fn attempt_collection(rest_format: RestFormat) -> anyhow::Result<Collection> {
     todo!()
 }
 
+
+/// Convert a VSCode `.rest` file or a Jetbrains `.http` file into a slumber collection
+pub fn from_rest(
+    rest_file: impl AsRef<Path>,
+) -> anyhow::Result<Collection> {
+    let rest_file = rest_file.as_ref();
+    // Parse the file and determine the flavor using the extension 
+    let rest_format = RestFormat::parse_file(rest_file)?;
+    let collection = attempt_collection_from_rest(rest_format)?;
+    Ok(collection)
+}
+
 #[cfg(test)]
-mod tests {}
+mod tests {
+
+    fn parse_http_bin_file_test() {
+
+    }
+
+
+}
