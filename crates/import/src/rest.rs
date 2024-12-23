@@ -536,10 +536,14 @@ mod tests {
         }
     }
 
+    fn remove_whitespace(s: &str) -> String {
+        s.chars().filter(|c| !c.is_whitespace()).collect()
+    }
+
     fn can_load_collection_from_file() {
         let test_http_path = test_data_dir().join("rest_http_bin.http");
         let test_slumber_path = test_data_dir().join("rest_slumber.yml");
-         
+
         let collection = from_rest(test_http_path).unwrap();
         let loaded_collection = Collection::load(&test_slumber_path).unwrap();
 
@@ -548,18 +552,45 @@ mod tests {
 
         // Saving and loading messes with the JSON whitespace
         // Compare it here
-       
+
         let recipe_1 = RecipeId::from("SimpleGet_0");
         let recipe_2 = RecipeId::from("JsonPost_1");
         let recipe_3 = RecipeId::from("Request_2");
         let recipe_4 = RecipeId::from("Pet_json_3");
-        assert_eq!(collection.recipes.try_get_recipe(&recipe_1).unwrap(), loaded_collection.recipes.try_get_recipe(&recipe_2).unwrap());
-        assert_eq!(collection.recipes.try_get_recipe(&recipe_3).unwrap(), loaded_collection.recipes.try_get_recipe(&recipe_3).unwrap());
-        assert_eq!(collection.recipes.try_get_recipe(&recipe_4).unwrap(), loaded_collection.recipes.try_get_recipe(&recipe_4).unwrap());
+        assert_eq!(
+            collection.recipes.try_get_recipe(&recipe_1).unwrap(),
+            loaded_collection.recipes.try_get_recipe(&recipe_2).unwrap()
+        );
+        assert_eq!(
+            collection.recipes.try_get_recipe(&recipe_3).unwrap(),
+            loaded_collection.recipes.try_get_recipe(&recipe_3).unwrap()
+        );
+        assert_eq!(
+            collection.recipes.try_get_recipe(&recipe_4).unwrap(),
+            loaded_collection.recipes.try_get_recipe(&recipe_4).unwrap()
+        );
 
-        // This request should have slightly different whitespace
-        let col_1 = collection.recipes.try_get_recipe(&recipe_2).unwrap();
-        let col_2 = loaded_collection.recipes.try_get_recipe(&recipe_2).unwrap();
+        // This request should have slightly different whitespace because it is JSON parsed
+        // To avoid rendering the output, just clean up the debug output and compare that
+        let bod_1 = collection.recipes.try_get_recipe(&recipe_2).unwrap();
+        let bod_2 = collection.recipes.try_get_recipe(&recipe_2).unwrap();
 
+        match (bod_1, bod_2) {
+            (
+                Recipe {
+                    body: Some(RecipeBody::Raw { body: b1, .. }),
+                    ..
+                },
+                Recipe {
+                    body: Some(RecipeBody::Raw { body: b2, .. }),
+                    ..
+                },
+            ) => {
+                let deb_1 = remove_whitespace(&format!("{b1:?}"));
+                let deb_2 = remove_whitespace(&format!("{b2:?}"));
+                assert_eq!(deb_1, deb_2);
+            },
+            _ => panic!("Invalid Json"),
+        };
     }
 }
