@@ -31,6 +31,11 @@ enum Format {
     /// https://github.com/Huachao/vscode-restclient
     /// https://www.jetbrains.com/help/idea/http-client-in-product-code-editor.html
     Rest,
+    /// Makes the importer more user friendly
+    /// The end user doesn't need to know VSCode and Jetbrains are treated the same
+    /// under the hood
+    Vscode,
+    Jetbrains,
 }
 
 impl Subcommand for ImportCommand {
@@ -41,7 +46,7 @@ impl Subcommand for ImportCommand {
                 slumber_import::from_insomnia(&self.input_file)?
             }
             Format::Openapi => slumber_import::from_openapi(&self.input_file)?,
-            Format::Rest => slumber_import::from_rest(&self.input_file)?,
+            Format::Rest | Format::Vscode | Format::Jetbrains => slumber_import::from_rest(&self.input_file)?,
         };
 
         // Write the output

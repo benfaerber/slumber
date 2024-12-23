@@ -22,6 +22,20 @@ For example, to import from an Insomnia collection `insomnia.json`:
 slumber import insomnia insomnia.json slumber.yml
 ```
 
+
+Or to import a Rest file from VSCode:
+
+```sh
+slumber import vscode test_file.rest slumber.yml
+```
+
+Or to import an HTTP file from Jetbrains:
+
+```sh
+slumber import jetbrains test_file.http slumber.yml
+```
+
+
 ## Formats
 
 Supported formats:

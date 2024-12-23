@@ -17,7 +17,7 @@ Content-Type: application/json
 X-Http-Method-Override: PUT
 
 {
-    "data": "my data", 
+    "data": "my data",
     "name": "{{FULL}}"
 }
 
@@ -26,7 +26,7 @@ X-Http-Method-Override: PUT
 @ENDPOINT = post
 
 POST https://httpbin.org/{{ENDPOINT}} HTTP/1.1
-Authorization: Bearer efaxijasdfjasdfa 
+Authorization: Bearer efaxijasdfjasdfa
 Content-Type: application/x-www-form-urlencoded
 My-Header: hello
 Other-Header: goodbye
