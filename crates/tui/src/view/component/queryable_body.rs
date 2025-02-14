@@ -16,6 +16,8 @@ use crate::{
     },
 };
 use anyhow::Context;
+use bytes::Bytes;
+use image::{DynamicImage, ImageReader};
 use persisted::PersistedContainer;
 use ratatui::{
     layout::{Constraint, Layout},
@@ -28,7 +30,7 @@ use slumber_core::{
     http::{content_type::ContentType, query::Query, ResponseBody},
     util::{MaybeStr, ResultTraced},
 };
-use std::cell::{Cell, Ref};
+use std::{cell::{Cell, Ref}};
 
 /// Display response body as text, with a query box to filter it if the body has
 /// been parsed. The query state can be persisted by persisting this entire
@@ -74,6 +76,7 @@ struct StateKey {
 #[derive(Debug)]
 struct State {
     text: Identified<Text<'static>>,
+    image: Option<Bytes>,
     is_parsed: bool,
     is_binary: bool,
 }
@@ -138,6 +141,12 @@ impl QueryableBody {
                 .traced()
                 .ok()
         };
+    }
+
+    pub fn image_bytes(&self) -> Option<Bytes> {
+        self.state
+            .get()
+            .map(|state| state.image.clone().unwrap()) 
     }
 }
 
@@ -266,6 +275,7 @@ fn init_state(
                 text: str_to_text(text).into(),
                 is_parsed: false,
                 is_binary: false,
+                image: None,
             }
         } else {
             // Showing binary content is a bit of a novelty, there's not much
@@ -275,6 +285,7 @@ fn init_state(
                 text: text.into(),
                 is_parsed: false,
                 is_binary: true,
+                image: None,
             }
         }
     } else {
@@ -292,6 +303,7 @@ fn init_state(
                 text: text.into(),
                 is_parsed: true,
                 is_binary: false,
+                image: None,
             }
         } else if let Some(text) = body.text() {
             // Body is textual but hasn't been parsed. Just show the plain text
@@ -299,18 +311,48 @@ fn init_state(
                 text: str_to_text(text).into(),
                 is_parsed: false,
                 is_binary: false,
+                image: None,
             }
         } else {
+            let is_image = image::guess_format(body.bytes()).is_ok();
+            let image = if is_image {
+                // TODO: After prototype, do some stuff to avoid cloning!
+                Some(body.bytes().clone())
+            } else {
+                None
+            };
+
             // Content is binary, show a textual representation of it
             let text: Text = format!("{:#}", MaybeStr(body.bytes())).into();
             State {
                 text: text.into(),
                 is_parsed: false,
                 is_binary: true,
+                image,
             }
         }
     }
 }
+
+
+fn render_image_as_text(image_bytes: &[u8]) -> anyhow::Result<()> {
+    let config = viuer::Config {
+        x: 100,
+        y: 6,
+        ..Default::default()
+    };
+    let img = ImageReader::new(std::io::Cursor::new(image_bytes))
+        .with_guessed_format()?
+        .decode()
+        .map(DynamicImage::into_rgba8)?; 
+    
+    let img = DynamicImage::ImageRgba8(img);
+
+
+    viuer::print(&img, &config).expect("Failed to render image!");
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod tests {

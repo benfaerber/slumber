@@ -19,6 +19,7 @@ crossterm = {workspace = true, features = ["bracketed-paste", "windows", "events
 derive_more = {workspace = true, features = ["debug", "deref", "deref_mut", "display", "from"]}
 editor-command = "1.0.0"
 futures = {workspace = true}
+image = "0.25.5"
 indexmap = {workspace = true}
 itertools = {workspace = true}
 notify = {version = "6.1.1", default-features = false, features = ["macos_fsevent"]}
@@ -37,6 +38,7 @@ tree-sitter-highlight = "0.22.6"
 tree-sitter-json = "0.21.0"
 unicode-width = "0.1.13"
 uuid = {workspace = true}
+viuer = "0.9.1"
 
 [dev-dependencies]
 pretty_assertions = {workspace = true}

@@ -1,5 +1,7 @@
 //! Display for HTTP responses
 
+use std::ops::Deref;
+
 use crate::{
     message::Message,
     view::{
@@ -17,6 +19,7 @@ use crate::{
     },
 };
 use derive_more::Display;
+use image::{DynamicImage, ImageReader};
 use persisted::PersistedKey;
 use ratatui::{text::Text, Frame};
 use serde::Serialize;
@@ -53,6 +56,8 @@ enum BodyMenuAction {
     EditCollection,
     #[display("View Body")]
     ViewBody,
+    #[display("View Image")]
+    ViewImage,
     #[display("Copy Body")]
     CopyBody,
     #[display("Save Body as File")]
@@ -84,6 +89,36 @@ impl ResponseBodyView {
             }
         }
     }
+
+    fn show_image(&self) {
+        if let Some(state) = self.state.get() {
+            if let Some(image_bytes) = state.body.data().image_bytes() {
+                if let Ok(image) = load_image(&image_bytes) {
+                    render_image(image);
+                }
+            }
+        }
+    }
+}
+
+
+fn load_image(image_bytes: &[u8]) -> anyhow::Result<DynamicImage> {
+    let img = ImageReader::new(std::io::Cursor::new(image_bytes))
+        .with_guessed_format()?
+        .decode()
+        .map(DynamicImage::into_rgba8)?; 
+    
+    Ok(DynamicImage::ImageRgba8(img))
+}
+
+fn render_image(image: DynamicImage) {
+    let config = viuer::Config {
+        x: 100,
+        y: 6,
+        ..Default::default()
+    };
+
+    viuer::print(&image, &config).expect("Failed to render image!");
 }
 
 impl EventHandler for ResponseBodyView {
@@ -96,6 +131,7 @@ impl EventHandler for ResponseBodyView {
                     ViewContext::send_message(Message::CollectionEdit)
                 }
                 BodyMenuAction::ViewBody => self.with_body(view_text),
+                BodyMenuAction::ViewImage => self.show_image(),
                 BodyMenuAction::CopyBody => {
                     // Use whatever text is visible to the user. This differs
                     // from saving the body, because:

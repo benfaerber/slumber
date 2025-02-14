@@ -9,7 +9,7 @@ name = "slumber"
 repository = "https://github.com/LucasPickering/slumber"
 version = "2.5.0"
 # Keep in sync w/ rust-toolchain.toml
-rust-version = "1.80.0"
+rust-version = "1.83.0"
 
 [workspace]
 members = ["crates/*"]
@@ -50,12 +50,14 @@ winnow = "0.6.16"
 
 [dependencies]
 anyhow = {workspace = true, features = ["backtrace"]}
+image = "0.25.5"
 slumber_cli = {workspace = true}
 slumber_core = {workspace = true}
 slumber_tui = {workspace = true, optional = true}
 tokio = {workspace = true, features = ["macros", "rt-multi-thread"]}
 tracing = {workspace = true}
 tracing-subscriber = {version = "0.3.17", default-features = false, features = ["ansi", "fmt", "registry"]}
+viuer = { version = "0.9.1", features = ["print-file"] }
 
 [features]
 default = ["tui"]
