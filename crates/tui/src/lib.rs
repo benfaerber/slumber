@@ -283,6 +283,12 @@ impl Tui {
                 delete_temp_file(&path);
             }
 
+            Message::ImageView { path } => {
+                self.show_image(path);
+                // delete_temp_file(&path);
+
+            }
+
             Message::Error { error } => self.view.open_modal(error),
 
             // Manage HTTP life cycle

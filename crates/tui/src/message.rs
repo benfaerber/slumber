@@ -92,6 +92,9 @@ pub enum Message {
     /// Open a file to be viewed in the user's external pager
     FileView { path: PathBuf },
 
+    /// View an image from a response body
+    ImageView { path: PathBuf },
+
     /// Launch an HTTP request from the given recipe/profile.
     HttpBeginRequest(RequestConfig),
     /// Request failed to build

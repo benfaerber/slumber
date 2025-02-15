@@ -16,7 +16,7 @@ use slumber_core::{
     template::{Prompt, PromptChannel, Prompter, Select},
     util::ResultTraced,
 };
-use std::{io::Write, path::Path, time::Duration};
+use std::{io::Write, path::{Path, PathBuf}, time::Duration};
 use tokio::{select, sync::broadcast, task, time};
 
 /// A data structure for representation a yes/no confirmation. This is similar
@@ -167,23 +167,38 @@ pub fn view_text(text: &Text) {
 }
 
 pub fn view_image(image_bytes: &Bytes) {
-    view_image_as_result(image_bytes).unwrap()
+    
+    fn view_image_as_result(image_bytes: &Bytes) -> anyhow::Result<PathBuf> {
+        let path = temp_file();
+        let path_ref = path.clone();
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(path)?;
+        
+        file.write_all(image_bytes);
+
+        let img = ImageReader::new(std::io::Cursor::new(image_bytes))
+            .with_guessed_format()?
+            .decode()
+            .map(DynamicImage::into_rgba8)?;
+
+        let dynamic_image = DynamicImage::ImageRgba8(img);
+
+        let config = viuer::Config {
+            x: 100,
+            y: 6,
+            ..Default::default()
+        };
+
+        viuer::print(&dynamic_image, &config).expect("Failed to render image!");
+        Ok(path_ref)
+    }
+
+    match view_image_as_result(image_bytes) {
+        Ok(path) => ViewContext::send_message(Message::ImageView { path }),
+        Err(error) => ViewContext::send_message(Message::Error { error }),
+    }
 }
 
-fn view_image_as_result(image_bytes: &Bytes) -> anyhow::Result<()> {
-    let img = ImageReader::new(std::io::Cursor::new(image_bytes))
-        .with_guessed_format()?
-        .decode()
-        .map(DynamicImage::into_rgba8)?;
-
-    let dynamic_image = DynamicImage::ImageRgba8(img);
-
-    let config = viuer::Config {
-        x: 100,
-        y: 6,
-        ..Default::default()
-    };
-
-    viuer::print(&dynamic_image, &config).expect("Failed to render image!");
-    Ok(())
-}
