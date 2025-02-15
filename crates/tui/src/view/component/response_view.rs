@@ -14,10 +14,11 @@ use crate::{
         draw::{Draw, DrawMetadata, Generate, ToStringGenerate},
         event::{Child, Event, EventHandler, Update},
         state::StateCell,
-        util::{persistence::PersistedLazy, view_text},
+        util::{persistence::PersistedLazy, view_text, view_image},
         Component, ViewContext,
     },
 };
+use bytes::Bytes;
 use derive_more::Display;
 use image::{DynamicImage, ImageReader};
 use persisted::PersistedKey;
@@ -90,6 +91,14 @@ impl ResponseBodyView {
         }
     }
 
+    fn with_image(&self, f: impl Fn(&Bytes)) {
+        if let Some(state) = self.state.get() {
+            if let Some(image) = state.body.data().image_bytes() {
+                f(&image)
+            }
+        }
+    }
+
     fn show_image(&self) {
         if let Some(state) = self.state.get() {
             if let Some(image_bytes) = state.body.data().image_bytes() {
@@ -131,7 +140,7 @@ impl EventHandler for ResponseBodyView {
                     ViewContext::send_message(Message::CollectionEdit)
                 }
                 BodyMenuAction::ViewBody => self.with_body(view_text),
-                BodyMenuAction::ViewImage => self.show_image(),
+                BodyMenuAction::ViewImage => self.with_image(view_image),
                 BodyMenuAction::CopyBody => {
                     // Use whatever text is visible to the user. This differs
                     // from saving the body, because:

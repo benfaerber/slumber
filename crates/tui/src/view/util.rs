@@ -5,6 +5,8 @@ pub mod persistence;
 
 use crate::{message::Message, util::temp_file, view::ViewContext};
 use anyhow::Context;
+use bytes::Bytes;
+use image::{DynamicImage, ImageReader};
 use itertools::Itertools;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -162,4 +164,26 @@ pub fn view_text(text: &Text) {
         Ok(()) => ViewContext::send_message(Message::FileView { path }),
         Err(error) => ViewContext::send_message(Message::Error { error }),
     }
+}
+
+pub fn view_image(image_bytes: &Bytes) {
+    view_image_as_result(image_bytes).unwrap()
+}
+
+fn view_image_as_result(image_bytes: &Bytes) -> anyhow::Result<()> {
+    let img = ImageReader::new(std::io::Cursor::new(image_bytes))
+        .with_guessed_format()?
+        .decode()
+        .map(DynamicImage::into_rgba8)?;
+
+    let dynamic_image = DynamicImage::ImageRgba8(img);
+
+    let config = viuer::Config {
+        x: 100,
+        y: 6,
+        ..Default::default()
+    };
+
+    viuer::print(&dynamic_image, &config).expect("Failed to render image!");
+    Ok(())
 }
